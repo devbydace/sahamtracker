@@ -72,3 +72,4 @@ model Setting {
   value     String
   updatedAt DateTime @updatedAt
 }
+

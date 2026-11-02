@@ -27,3 +27,4 @@ if (target === "postgres" || target === "pg" || target === "neon" || target === 
   console.error("Gunakan perintah: npx tsx scripts/switch-db.ts [postgres | sqlite]");
   process.exit(1);
 }
+
