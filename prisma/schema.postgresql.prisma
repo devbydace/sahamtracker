@@ -1,0 +1,74 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Stock {
+  ticker        String        @id // e.g. BBCA, BBRI
+  name          String        // e.g. Bank Central Asia Tbk
+  sector        String?       // e.g. Financials
+  currentPrice  Float         @default(0)
+  changePercent Float         @default(0)
+  lastUpdated   DateTime?
+  transactions  Transaction[]
+  dividends     Dividend[]
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  stockTicker     String
+  stock           Stock    @relation(fields: [stockTicker], references: [ticker], onDelete: Cascade)
+  type            String   // "BUY" | "SELL"
+  date            DateTime @default(now())
+  lots            Int      // Jumlah lot (1 lot = 100 lembar)
+  shares          Int      // lots * 100
+  pricePerShare   Float    // Harga per lembar
+  fee             Float    @default(0) // Broker fee
+  totalAmount     Float    // Total uang yang dikeluarkan / diterima
+  notes           String?
+  broker          String?  @default("Default") // e.g. Ajaib, Stockbit, IPOT
+  createdAt       DateTime @default(now())
+}
+
+model Dividend {
+  id            String   @id @default(uuid())
+  stockTicker   String
+  stock         Stock    @relation(fields: [stockTicker], references: [ticker], onDelete: Cascade)
+  paymentDate   DateTime
+  dps           Float    // Dividend Per Share (Rp per lembar)
+  totalShares   Int      // Jumlah lembar saham yang berhak
+  grossAmount   Float    // dps * totalShares
+  taxRate       Float    @default(0.10) // 10% PPh Final atau 0% jika diinvestasikan kembali
+  taxAmount     Float    // grossAmount * taxRate
+  netAmount     Float    // grossAmount - taxAmount
+  notes         String?
+  createdAt     DateTime @default(now())
+}
+
+model CashTransaction {
+  id            String   @id @default(uuid())
+  date          DateTime @default(now())
+  type          String   // "DEPOSIT" | "WITHDRAW" | "INTEREST" | "TAX_FEE" | "DIVIDEND"
+  amount        Float
+  notes         String?
+  broker        String?  @default("Default")
+  createdAt     DateTime @default(now())
+}
+
+model SavingsGoal {
+  id            String   @id @default(uuid())
+  yearMonth     String   @unique // Format: "YYYY-MM", e.g. "2026-11"
+  targetAmount  Float    // Target tabungan saham per bulan
+  notes         String?
+  createdAt     DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
