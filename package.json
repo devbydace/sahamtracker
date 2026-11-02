@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
+    "setup:supabase": "npx tsx scripts/setup-supabase.ts",
     "use:pg": "npx tsx scripts/switch-db.ts postgres",
     "use:sqlite": "npx tsx scripts/switch-db.ts sqlite",
     "webhook:set": "npx tsx scripts/set-telegram-webhook.ts set",
@@ -19,6 +20,8 @@
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.66.0",
     "next": "16.4.4",
