@@ -49,7 +49,7 @@ Ganti URL di bawah dengan connection string Neon Anda:
 
 **Di PowerShell (Windows):**
 ```powershell
-$env:DATABASE_URL="postgresql://neondb_owner:AbCdEfGh123@ep-cool-mountain-a1b2c3d4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+$env:DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.hoecvsslwgsyofxzcbbn.supabase.co:5432/postgres"
 npm run db:push
 ```
 
