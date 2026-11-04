@@ -1,3 +1,4 @@
+# Panduan Deploy Serverless 24/7 (Vercel + Neon PostgreSQL + Telegram Webhook)
 # Panduan Deploy Serverless 24/7 (Vercel + Supabase/Neon PostgreSQL + Telegram Webhook)
 
 Panduan lengkap untuk mendeploy aplikasi **SahamTracker** secara 100% gratis, aman, dan aktif 24 jam nonstop tanpa perlu menyalakan laptop.
@@ -15,13 +16,24 @@ Panduan lengkap untuk mendeploy aplikasi **SahamTracker** secara 100% gratis, am
          ├──► [ Yahoo Finance API ] (Harga Real-time, Valuasi, Consensus)
          │
          ▼
+[ Neon.tech PostgreSQL ] (Database cloud gratis, auto-scaling & sleep-to-zero)
 [ Supabase / Neon PostgreSQL ] (Database cloud gratis & reliable)
 ```
 
 ---
 
+## Langkah 1: Buat Database Cloud Gratis di Neon.tech
 ## Langkah 1: Setup Database Supabase Otomatis (1 Langkah)
 
+1. Buka [https://neon.tech](https://neon.tech) dan daftar/masuk dengan akun GitHub atau Google Anda.
+2. Buat project baru, beri nama misalnya: `saham-tracker-db`.
+3. Pilih Region yang paling dekat dengan Indonesia: **Singapore (ap-southeast-1)**.
+4. Setelah selesai, Anda akan mendapatkan **Connection String (URI)**.
+   Contohnya:
+   ```env
+   postgresql://neondb_owner:AbCdEfGh123@ep-cool-mountain-a1b2c3d4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+   ```
+5. Simpan connection string tersebut untuk Langkah 2 dan Langkah 4.
 Project Supabase Anda telah terdeteksi (`hoecvsslwgsyofxzcbbn`). Supabase versi gratis memerlukan **Connection Pooler (IPv4)** agar dapat diakses dari jaringan internet Indonesia.
 
 Kami telah membuatkan script otomatis untuk Anda! Cukup jalankan di terminal:
@@ -41,22 +53,37 @@ Script ini akan:
 
 ---
 
+## Langkah 2: Switch Schema & Buat Tabel di PostgreSQL
 ## Opsi Manual: Jika Ingin Menjalankan Sendiri
 
+Di terminal komputer Anda (folder `tracking-saham`), jalankan:
 Jika Anda ingin menjalankan secara manual, gunakan connection string **Connection Pooler IPv4**:
 
+### 1. Alihkan Schema ke PostgreSQL
+```bash
 **Di PowerShell (Windows):**
 ```powershell
 # 1. Alihkan schema ke PostgreSQL
 npm run use:pg
+```
+*Script ini otomatis mengubah `prisma/schema.prisma` ke provider PostgreSQL dan menjalankan `prisma generate`.*
 
+### 2. Push Tabel ke Database Neon
+Ganti URL di bawah dengan connection string Neon Anda:
 # 2. Set URL Pooler IPv4 (Ganti YOUR_PASSWORD dengan password Supabase Anda)
 $env:DATABASE_URL="postgresql://postgres.hoecvsslwgsyofxzcbbn:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require"
 
+**Di PowerShell (Windows):**
+```powershell
+$env:DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.hoecvsslwgsyofxzcbbn.supabase.co:5432/postgres"
 # 3. Push tabel ke Supabase
 npm run db:push
 ```
 
+**Di Git Bash / Linux / Mac:**
+```bash
+DATABASE_URL="postgresql://neondb_owner:AbCdEfGh123@ep-cool-mountain-a1b2c3d4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require" npm run db:push
+```
 > **PENTING untuk Supabase:**
 > - Jangan gunakan host `db.hoecvsslwgsyofxzcbbn.supabase.co` karena hanya IPv6.
 > - Gunakan host pooler: `aws-0-ap-southeast-1.pooler.supabase.com` (Port 5432).
