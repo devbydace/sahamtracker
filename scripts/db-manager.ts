@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import { prisma, ensureSqliteOptimized } from "../src/lib/prisma";
+import { prisma } from "../src/lib/prisma";
 
 const rootDir = process.cwd();
 const dbFilePath = path.join(rootDir, "prisma", "dev.db");
@@ -16,24 +16,14 @@ function formatBytes(bytes: number): string {
 }
 
 async function showStatus() {
+  const isPostgres = Boolean(process.env.DATABASE_URL?.includes("postgres"));
   console.log("====================================================");
-  console.log("       🗄️  SahamTracker SQLite Database Status      ");
+  console.log(
+    `       🗄️  SahamTracker ${
+      isPostgres ? "PostgreSQL (Supabase)" : "SQLite"
+    } Status      `
+  );
   console.log("====================================================\n");
-
-  const exists = fs.existsSync(dbFilePath);
-  const size = exists ? fs.statSync(dbFilePath).size : 0;
-
-  await ensureSqliteOptimized();
-
-  let journalMode = "unknown";
-  try {
-    const res = await prisma.$queryRawUnsafe<Array<{ journal_mode: string }>>(
-      "PRAGMA journal_mode;"
-    );
-    journalMode = res?.[0]?.journal_mode || "unknown";
-  } catch {
-    // ignore
-  }
 
   const [stockCount, txCount, cashCount, divCount, goalCount, settings] =
     await Promise.all([
@@ -48,9 +38,14 @@ async function showStatus() {
   const tgToken = settings.find((s) => s.key === "telegram_bot_token")?.value;
   const tgChat = settings.find((s) => s.key === "telegram_chat_id")?.value;
 
-  console.log(`📁 Lokasi File     : ${dbFilePath}`);
-  console.log(`💾 Ukuran Database : ${formatBytes(size)}`);
-  console.log(`⚡ Mode Jurnal     : ${journalMode.toUpperCase()} (Concurrent Ready)`);
+  console.log(
+    `📁 Provider        : ${isPostgres ? "PostgreSQL Cloud (Supabase)" : "SQLite Local"}`
+  );
+  console.log(
+    `🌐 Endpoint / Host : ${
+      isPostgres ? "aws-0-ap-southeast-1.pooler.supabase.com" : dbFilePath
+    }`
+  );
   console.log("----------------------------------------------------");
   console.log(`📈 Emiten Saham    : ${stockCount}`);
   console.log(`🛒 Transaksi Saham : ${txCount}`);
@@ -66,18 +61,16 @@ async function showStatus() {
 }
 
 async function initDatabase() {
-  console.log("🔄 Menginisialisasi & menyinkronkan database SQLite...");
+  console.log("🔄 Menginisialisasi & menyinkronkan database dengan Prisma...");
 
   try {
     execSync("npx prisma db push --skip-generate", {
       stdio: "inherit",
-      env: { ...process.env, DATABASE_URL: "file:./dev.db" },
+      env: process.env,
     });
   } catch (err) {
     console.warn("⚠️ Peringatan saat db push:", (err as Error).message);
   }
-
-  await ensureSqliteOptimized();
 
   // Pastikan target tabungan bulan berjalan tersedia
   const now = new Date();

@@ -1,9 +1,9 @@
 // ============================================================
-// SahamTracker IDX - SQLite Database Schema
+// SahamTracker IDX - PostgreSQL (Supabase) Database Schema
 // ============================================================
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

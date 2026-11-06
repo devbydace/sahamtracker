@@ -193,9 +193,9 @@ export function DatabaseModal({ isOpen, onClose }: DatabaseModalProps) {
             </div>
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                Database Lokal SQLite
+                Database Portofolio
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  {stats?.journalMode || "WAL"} Aktif
+                  {stats?.provider || "Supabase Cloud"}
                 </span>
               </h3>
             </div>
@@ -226,25 +226,25 @@ export function DatabaseModal({ isOpen, onClose }: DatabaseModalProps) {
             </div>
           )}
 
-          {/* SQLite Info Card */}
+          {/* Database Info Card */}
           <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400 flex items-center gap-1.5">
                 <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
-                Engine & Lokasi File:
+                Provider:
               </span>
               <span className="font-mono text-slate-200 font-semibold">
-                {stats?.fileName || "prisma/dev.db"} ({formatBytes(stats?.sizeBytes || 0)})
+                {stats?.provider || "PostgreSQL (Supabase)"}
               </span>
             </div>
 
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400 flex items-center gap-1.5">
                 <Activity className="w-3.5 h-3.5 text-sky-400" />
-                Mode Konkurensi:
+                Host / Endpoint:
               </span>
               <span className="text-slate-300">
-                Write-Ahead Logging ({stats?.journalMode || "WAL"})
+                {stats?.fileName || "Supabase Pooler (Singapore)"}
               </span>
             </div>
 

@@ -3,7 +3,7 @@
 import fs from "fs";
 import path from "path";
 import { revalidatePath } from "next/cache";
-import { prisma, ensureSqliteOptimized } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { calculatePortfolio, refreshAllStockPrices } from "@/lib/portfolio";
 import { fetchStockQuote, fetchStockDeepAnalysis, POPULAR_IDX_STOCKS } from "@/lib/yahoo-finance";
 import { calculateBrokerFee } from "@/lib/format";
@@ -517,19 +517,9 @@ export async function resetPortfolioDataAction() {
 
 export async function getDatabaseStatsAction() {
   try {
-    await ensureSqliteOptimized();
-    const dbPath = path.join(process.cwd(), "prisma", "dev.db");
-    const sizeBytes = fs.existsSync(dbPath) ? fs.statSync(dbPath).size : 0;
-
-    let journalMode = "WAL";
-    try {
-      const res = await prisma.$queryRawUnsafe<Array<{ journal_mode: string }>>(
-        "PRAGMA journal_mode;"
-      );
-      journalMode = (res?.[0]?.journal_mode || "wal").toUpperCase();
-    } catch {
-      // ignore
-    }
+    const isPostgres = Boolean(process.env.DATABASE_URL?.includes("postgres"));
+    const providerName = isPostgres ? "PostgreSQL (Supabase Cloud)" : "SQLite (Local File)";
+    const hostInfo = isPostgres ? "Supabase Pooler (Singapore)" : "prisma/dev.db";
 
     const [stocks, transactions, dividends, cashTransactions, savingsGoals] =
       await Promise.all([
@@ -543,10 +533,10 @@ export async function getDatabaseStatsAction() {
     return {
       success: true,
       stats: {
-        provider: "SQLite (Local File)",
-        fileName: "prisma/dev.db",
-        sizeBytes,
-        journalMode,
+        provider: providerName,
+        fileName: hostInfo,
+        sizeBytes: 0,
+        journalMode: isPostgres ? "Cloud Managed" : "WAL",
         counts: {
           stocks,
           transactions,
