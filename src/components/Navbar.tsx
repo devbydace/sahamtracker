@@ -53,10 +53,10 @@ export function Navbar({
           <button
             onClick={onOpenDatabaseModal}
             className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700 transition-colors"
-            title="Manajemen Database (Status, Backup, Restore, Reset)"
+            title="Manajemen Database SQLite (Status, Backup, Restore, Reset)"
           >
             <Database className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden lg:inline">Database</span>
+            <span className="hidden lg:inline">SQLite DB</span>
           </button>
 
           <button

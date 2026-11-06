@@ -193,9 +193,9 @@ export function DatabaseModal({ isOpen, onClose }: DatabaseModalProps) {
             </div>
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                Database Portofolio
+                Database SQLite
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  {stats?.provider || "Supabase Cloud"}
+                  SQLite File
                 </span>
               </h3>
             </div>
@@ -231,20 +231,20 @@ export function DatabaseModal({ isOpen, onClose }: DatabaseModalProps) {
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400 flex items-center gap-1.5">
                 <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
-                Provider:
+                Database Engine:
               </span>
               <span className="font-mono text-slate-200 font-semibold">
-                {stats?.provider || "PostgreSQL (Supabase)"}
+                SQLite ({stats?.fileName || "prisma/dev.db"})
               </span>
             </div>
 
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400 flex items-center gap-1.5">
                 <Activity className="w-3.5 h-3.5 text-sky-400" />
-                Host / Endpoint:
+                Ukuran File:
               </span>
-              <span className="text-slate-300">
-                {stats?.fileName || "Supabase Pooler (Singapore)"}
+              <span className="text-slate-300 font-mono">
+                {formatBytes(stats?.sizeBytes || 0)}
               </span>
             </div>
 

@@ -517,9 +517,8 @@ export async function resetPortfolioDataAction() {
 
 export async function getDatabaseStatsAction() {
   try {
-    const isPostgres = Boolean(process.env.DATABASE_URL?.includes("postgres"));
-    const providerName = isPostgres ? "PostgreSQL (Supabase Cloud)" : "SQLite (Local File)";
-    const hostInfo = isPostgres ? "Supabase Pooler (Singapore)" : "prisma/dev.db";
+    const dbPath = path.join(process.cwd(), "prisma", "dev.db");
+    const sizeBytes = fs.existsSync(dbPath) ? fs.statSync(dbPath).size : 0;
 
     const [stocks, transactions, dividends, cashTransactions, savingsGoals] =
       await Promise.all([
@@ -533,10 +532,10 @@ export async function getDatabaseStatsAction() {
     return {
       success: true,
       stats: {
-        provider: providerName,
-        fileName: hostInfo,
-        sizeBytes: 0,
-        journalMode: isPostgres ? "Cloud Managed" : "WAL",
+        provider: "SQLite (Local File)",
+        fileName: "prisma/dev.db",
+        sizeBytes,
+        journalMode: "Standard",
         counts: {
           stocks,
           transactions,
