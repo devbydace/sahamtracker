@@ -1,186 +1,72 @@
-# Panduan Deploy Serverless 24/7 (Vercel + Neon PostgreSQL + Telegram Webhook)
-# Panduan Deploy Serverless 24/7 (Vercel + Supabase/Neon PostgreSQL + Telegram Webhook)
+# Panduan Lengkap Deploy SahamTracker IDX ke Vercel
 
-Panduan lengkap untuk mendeploy aplikasi **SahamTracker** secara 100% gratis, aman, dan aktif 24 jam nonstop tanpa perlu menyalakan laptop.
-
----
-
-## Arsitektur Serverless
-
-```
-[ Telegram App (HP/PC) ]
-         │ (Perintah: /analisa BBCA, /portfolio, /harga)
-         ▼
-[ Vercel Serverless Function ] (/api/telegram/webhook)
-         │
-         ├──► [ Yahoo Finance API ] (Harga Real-time, Valuasi, Consensus)
-         │
-         ▼
-[ Neon.tech PostgreSQL ] (Database cloud gratis, auto-scaling & sleep-to-zero)
-[ Supabase / Neon PostgreSQL ] (Database cloud gratis & reliable)
-```
+Panduan langkah demi langkah mendeploy aplikasi **SahamTracker IDX** dari repositori GitHub Anda ke **Vercel** secara gratis.
 
 ---
 
-## Langkah 1: Buat Database Cloud Gratis di Neon.tech
-## Langkah 1: Setup Database Supabase Otomatis (1 Langkah)
+## Persiapan Repositori
 
-1. Buka [https://neon.tech](https://neon.tech) dan daftar/masuk dengan akun GitHub atau Google Anda.
-2. Buat project baru, beri nama misalnya: `saham-tracker-db`.
-3. Pilih Region yang paling dekat dengan Indonesia: **Singapore (ap-southeast-1)**.
-4. Setelah selesai, Anda akan mendapatkan **Connection String (URI)**.
-   Contohnya:
-   ```env
-   postgresql://neondb_owner:AbCdEfGh123@ep-cool-mountain-a1b2c3d4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
-   ```
-5. Simpan connection string tersebut untuk Langkah 2 dan Langkah 4.
-Project Supabase Anda telah terdeteksi (`hoecvsslwgsyofxzcbbn`). Supabase versi gratis memerlukan **Connection Pooler (IPv4)** agar dapat diakses dari jaringan internet Indonesia.
-
-Kami telah membuatkan script otomatis untuk Anda! Cukup jalankan di terminal:
-
-```bash
-npm run setup:supabase
-```
-
-Script ini akan:
-1. Menanyakan password database Supabase Anda.
-2. Mengonfigurasi host IPv4 (`aws-0-ap-southeast-1.pooler.supabase.com:5432`).
-3. Mengubah schema Prisma ke PostgreSQL.
-4. Membuat seluruh tabel (`Stock`, `Transaction`, `Dividend`, `CashTransaction`, `SavingsGoal`, `Setting`) di Supabase.
-5. Menyimpan kredensial Telegram Bot Anda ke database cloud.
-
-*(Atau Anda bisa langsung menjalankan dengan argumen: `npm run setup:supabase "PASSWORD_ANDA"`)*
+Repositori GitHub Anda sudah siap dan ter-push di:
+👉 **`https://github.com/devbydace/sahamtracker`** (Branch: `main`)
 
 ---
 
-## Langkah 2: Switch Schema & Buat Tabel di PostgreSQL
-## Opsi Manual: Jika Ingin Menjalankan Sendiri
+## Langkah 1: Hubungkan Repositori di Vercel
 
-Di terminal komputer Anda (folder `tracking-saham`), jalankan:
-Jika Anda ingin menjalankan secara manual, gunakan connection string **Connection Pooler IPv4**:
-
-### 1. Alihkan Schema ke PostgreSQL
-```bash
-**Di PowerShell (Windows):**
-```powershell
-# 1. Alihkan schema ke PostgreSQL
-npm run use:pg
-```
-*Script ini otomatis mengubah `prisma/schema.prisma` ke provider PostgreSQL dan menjalankan `prisma generate`.*
-
-### 2. Push Tabel ke Database Neon
-Ganti URL di bawah dengan connection string Neon Anda:
-# 2. Set URL Pooler IPv4 (Ganti YOUR_PASSWORD dengan password Supabase Anda)
-$env:DATABASE_URL="postgresql://postgres.hoecvsslwgsyofxzcbbn:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require"
-
-**Di PowerShell (Windows):**
-```powershell
-$env:DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.hoecvsslwgsyofxzcbbn.supabase.co:5432/postgres"
-# 3. Push tabel ke Supabase
-npm run db:push
-```
-
-**Di Git Bash / Linux / Mac:**
-```bash
-DATABASE_URL="postgresql://neondb_owner:AbCdEfGh123@ep-cool-mountain-a1b2c3d4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require" npm run db:push
-```
-> **PENTING untuk Supabase:**
-> - Jangan gunakan host `db.hoecvsslwgsyofxzcbbn.supabase.co` karena hanya IPv6.
-> - Gunakan host pooler: `aws-0-ap-southeast-1.pooler.supabase.com` (Port 5432).
-> - Username adalah: `postgres.hoecvsslwgsyofxzcbbn` (bukan hanya `postgres`).
-> - Jika password mengandung simbol (seperti `@`, `#`, `?`), encode ke URL (misal `@` menjadi `%40`).
-
-*Semua tabel (`Stock`, `Transaction`, `Dividend`, `CashTransaction`, `SavingsGoal`, `Setting`) akan langsung dibuat di cloud.*
+1. Buka [https://vercel.com](https://vercel.com) dan login (disarankan menggunakan akun **GitHub** Anda).
+2. Di halaman Dashboard Vercel, klik tombol **"Add New..."** lalu pilih **"Project"**.
+3. Di daftar repositori GitHub yang muncul, cari **`sahamtracker`** (atau `devbydace/sahamtracker`).
+4. Klik tombol **"Import"** di samping nama repositori tersebut.
 
 ---
 
-## Langkah 3: Push Source Code ke GitHub
+## Langkah 2: Konfigurasi Project di Vercel
 
-Buat repositori baru di akun GitHub Anda (misal: `tracking-saham`), lalu jalankan:
+Pada form konfigurasi project Vercel:
 
-```bash
-git add .
-git commit -m "feat: serverless setup ready for vercel"
-git branch -M main
-git remote add origin https://github.com/<username-anda>/tracking-saham.git
-git push -u origin main
-```
-
-*(Catatan: File konfigurasi rahasia seperti `.env` dan database lokal `dev.db` sudah otomatis diamankan di `.gitignore`).*
+1. **Project Name**: Biarkan default `sahamtracker` (atau nama lain yang Anda inginkan).
+2. **Framework Preset**: Pastikan terpilih **Next.js**.
+3. **Root Directory**: `./` (default).
+4. **Build and Output Settings**:
+   - Biarkan sesuai konfigurasi otomatis dari [`vercel.json`](vercel.json), yaitu:
+     `npx prisma db push && next build`
+   - Region otomatis diatur ke **Singapore (`sin1`)** untuk latensi tercepat ke Indonesia.
 
 ---
 
-## Langkah 4: Deploy ke Vercel (100% Gratis)
+## Langkah 3: Isi Environment Variables
 
-1. Buka [https://vercel.com](https://vercel.com) dan masuk dengan akun GitHub Anda.
-2. Klik tombol **"Add New..."** -> **"Project"**.
-3. Pilih repository **`tracking-saham`** yang baru saja Anda push.
-4. Pada bagian **Environment Variables**, tambahkan 4 variabel berikut:
+Buka bagian **"Environment Variables"** (klik untuk expand), lalu masukkan 4 variabel berikut:
 
-| Key | Value (Contoh) |
-|---|---|
-| `DATABASE_URL` | `postgresql://neondb_owner:...@ep-...neon.tech/neondb?sslmode=require` |
-| `TELEGRAM_BOT_TOKEN` | Token BotFather Anda (`9241771038:AAGYxAjVhCejEdrlDV9M7j98Ithwhz4C62k`) |
-| `TELEGRAM_CHAT_ID` | Chat ID Anda (`8827226655`) |
-| `NEXT_PUBLIC_APP_URL` | Domain Vercel Anda, misal: `https://tracking-saham.vercel.app` |
+| Key | Value | Keterangan |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | `file:./dev.db` | Menggunakan database SQLite lokal |
+| `TELEGRAM_BOT_TOKEN` | `9241771038:AAGYxAjVhCejEdrlDV9M7j98Ithwhz4C62k` | Token bot Telegram Anda |
+| `TELEGRAM_CHAT_ID` | `8827226655` | Chat ID Telegram Anda |
+| `NEXT_PUBLIC_APP_URL` | `https://sahamtracker.vercel.app` | Ganti dengan domain Vercel yang Anda dapatkan setelah deploy |
 
-5. Klik **"Deploy"**.
-6. Tunggu sekitar 1-2 menit hingga build selesai. Anda akan mendapatkan URL live seperti:
-   `https://tracking-saham-xxxx.vercel.app`
+> [!NOTE]
+> *Jika domain final Vercel Anda belum diketahui sebelumnya, isi sementara dengan `https://sahamtracker.vercel.app`. Anda bisa mengupdatenya setelah deployment pertama selesai.*
 
 ---
 
-## Langkah 5: Aktifkan Webhook Telegram 24/7
+## Langkah 4: Klik Deploy!
 
-Setelah web Anda live di Vercel, Telegram bot perlu diarahkan ke URL Webhook Vercel:
+1. Klik tombol **"Deploy"** di bagian bawah.
+2. Tunggu proses build berjalan sekitar 1–2 menit.
+3. Setelah selesai, Vercel akan menampilkan layar perayaan **"Congratulations!"** beserta screenshot dan tautan ke website live Anda (contoh: `https://sahamtracker-xxxx.vercel.app`).
 
-### Cara A: Melalui Web UI (Paling Praktis)
-1. Buka website Vercel Anda di browser.
-2. Klik tombol **Telegram** di pojok kanan atas header.
-3. Di bagian **Mode Cloud Serverless 24/7 (Vercel)**, pastikan input URL berisi domain Vercel Anda (misal `https://tracking-saham.vercel.app`).
+---
+
+## Langkah 5: Aktifkan Bot Telegram Cloud 24/7 (Webhook)
+
+Agar bot Telegram Anda dapat menerima perintah interaktif (`/portfolio`, `/analisa BBCA`, `/harga BSSR`, `/dca`) langsung dari HP kapan saja:
+
+### Cara Paling Mudah (Lewat Web):
+1. Buka website Vercel yang baru saja Anda deploy.
+2. Klik tombol **Telegram** di navbar atas.
+3. Pada bagian **"Mode Cloud Serverless 24/7 (Vercel)"**, URL website Vercel Anda akan otomatis terdeteksi.
 4. Klik tombol **"Aktifkan Webhook Cloud 24/7"**.
 5. Status akan berubah hijau: **"Webhook Aktif"**.
 
-### Cara B: Melalui Terminal Lokal
-```bash
-npm run webhook:set https://tracking-saham.vercel.app
-```
-
-### Cara C: Langsung Melalui Browser URL
-Buka link ini di browser Anda (ganti `<TOKEN>` dan `<DOMAIN-VERCEL>`):
-```
-https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<DOMAIN-VERCEL>/api/telegram/webhook
-```
-
----
-
-## Verifikasi & Tes
-
-Buka aplikasi Telegram di HP Anda dan kirim pesan ke bot:
-- `/portfolio` → Rekap nilai aset, profit/loss, kas RDN, dan alokasi
-- `/analisa BBCA` → Analisa fundamental, valuasi, target konsensus analis, & trading plan (Buy, SL, TP1, TP2, RRR)
-- `/harga BBCA` → Cek harga real-time IHSG
-- `/dca` → Rekomendasi saham prioritas untuk averaging down
-
-Bot sekarang merespon instan 24 jam tanpa perlu menjalankan PC/laptop!
-
----
-
-## Tips Pengembangan Lokal vs Cloud
-
-Jika di masa depan Anda ingin kembali melakukan pengetesan secara offline / lokal:
-
-1. **Kembalikan schema ke SQLite lokal**:
-   ```bash
-   npm run use:sqlite
-   ```
-2. **Matikan webhook cloud** (agar Telegram mengizinkan polling lokal):
-   ```bash
-   npm run webhook:clear
-   ```
-3. **Jalankan dev server & bot poller lokal**:
-   ```bash
-   npm run dev
-   npm run bot
-   ```
-
+Selesai! Sekarang aplikasi dan bot Telegram Anda telah berjalan live di cloud Vercel.
