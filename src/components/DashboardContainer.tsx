@@ -15,6 +15,7 @@ import { DividendModal } from "./DividendModal";
 import { CalculatorModal } from "./CalculatorModal";
 import { TelegramModal } from "./TelegramModal";
 import { StockAnalysisModal } from "./StockAnalysisModal";
+import { DatabaseModal } from "./DatabaseModal";
 import { PortfolioSummary } from "@/lib/portfolio";
 import { Layers, History, Wallet, DollarSign } from "lucide-react";
 
@@ -41,6 +42,7 @@ export function DashboardContainer({
   const [isCalcModalOpen, setIsCalcModalOpen] = useState(false);
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+  const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
   const [analysisTicker, setAnalysisTicker] = useState("BBCA");
 
   // Active tab under dashboard
@@ -80,6 +82,7 @@ export function DashboardContainer({
         onOpenCalcModal={() => setIsCalcModalOpen(true)}
         onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
         onOpenAnalysisModal={() => handleOpenAnalysis("BBCA")}
+        onOpenDatabaseModal={() => setIsDatabaseModalOpen(true)}
         hasData={hasData}
       />
 
@@ -222,6 +225,11 @@ export function DashboardContainer({
         onClose={() => setIsAnalysisModalOpen(false)}
         initialTicker={analysisTicker}
         holdings={portfolio.holdings}
+      />
+
+      <DatabaseModal
+        isOpen={isDatabaseModalOpen}
+        onClose={() => setIsDatabaseModalOpen(false)}
       />
     </div>
   );

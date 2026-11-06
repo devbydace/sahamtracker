@@ -1,7 +1,9 @@
 "use server";
 
+import fs from "fs";
+import path from "path";
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { prisma, ensureSqliteOptimized } from "@/lib/prisma";
 import { calculatePortfolio, refreshAllStockPrices } from "@/lib/portfolio";
 import { fetchStockQuote, fetchStockDeepAnalysis, POPULAR_IDX_STOCKS } from "@/lib/yahoo-finance";
 import { calculateBrokerFee } from "@/lib/format";
@@ -510,6 +512,203 @@ export async function resetPortfolioDataAction() {
   } catch (error: any) {
     console.error("Error resetting portfolio data:", error);
     return { success: false, error: "Gagal mengosongkan data portofolio." };
+  }
+}
+
+export async function getDatabaseStatsAction() {
+  try {
+    await ensureSqliteOptimized();
+    const dbPath = path.join(process.cwd(), "prisma", "dev.db");
+    const sizeBytes = fs.existsSync(dbPath) ? fs.statSync(dbPath).size : 0;
+
+    let journalMode = "WAL";
+    try {
+      const res = await prisma.$queryRawUnsafe<Array<{ journal_mode: string }>>(
+        "PRAGMA journal_mode;"
+      );
+      journalMode = (res?.[0]?.journal_mode || "wal").toUpperCase();
+    } catch {
+      // ignore
+    }
+
+    const [stocks, transactions, dividends, cashTransactions, savingsGoals] =
+      await Promise.all([
+        prisma.stock.count(),
+        prisma.transaction.count(),
+        prisma.dividend.count(),
+        prisma.cashTransaction.count(),
+        prisma.savingsGoal.count(),
+      ]);
+
+    return {
+      success: true,
+      stats: {
+        provider: "SQLite (Local File)",
+        fileName: "prisma/dev.db",
+        sizeBytes,
+        journalMode,
+        counts: {
+          stocks,
+          transactions,
+          dividends,
+          cashTransactions,
+          savingsGoals,
+        },
+      },
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Gagal mengambil info database." };
+  }
+}
+
+export async function exportDatabaseJsonAction() {
+  try {
+    const [stocks, transactions, dividends, cashTransactions, savingsGoals, settings] =
+      await Promise.all([
+        prisma.stock.findMany(),
+        prisma.transaction.findMany({ orderBy: { date: "asc" } }),
+        prisma.dividend.findMany({ orderBy: { paymentDate: "asc" } }),
+        prisma.cashTransaction.findMany({ orderBy: { date: "asc" } }),
+        prisma.savingsGoal.findMany(),
+        prisma.setting.findMany(),
+      ]);
+
+    const payload = {
+      app: "SahamTracker IDX",
+      database: "sqlite",
+      exportedAt: new Date().toISOString(),
+      data: {
+        stocks,
+        transactions,
+        dividends,
+        cashTransactions,
+        savingsGoals,
+        settings,
+      },
+    };
+
+    return {
+      success: true,
+      json: JSON.stringify(payload, null, 2),
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Gagal mengekspor database." };
+  }
+}
+
+export async function importDatabaseJsonAction(jsonString: string) {
+  try {
+    const parsed = JSON.parse(jsonString);
+    const data = parsed?.data;
+    if (!data) {
+      return { success: false, error: "Format file JSON backup tidak valid." };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.transaction.deleteMany();
+      await tx.dividend.deleteMany();
+      await tx.cashTransaction.deleteMany();
+      await tx.savingsGoal.deleteMany();
+      await tx.stock.deleteMany();
+
+      if (Array.isArray(data.stocks)) {
+        for (const s of data.stocks) {
+          await tx.stock.create({
+            data: {
+              ticker: s.ticker,
+              name: s.name,
+              sector: s.sector,
+              currentPrice: Number(s.currentPrice || 0),
+              changePercent: Number(s.changePercent || 0),
+              lastUpdated: s.lastUpdated ? new Date(s.lastUpdated) : new Date(),
+            },
+          });
+        }
+      }
+
+      if (Array.isArray(data.transactions)) {
+        for (const t of data.transactions) {
+          await tx.transaction.create({
+            data: {
+              id: t.id,
+              stockTicker: t.stockTicker,
+              type: t.type,
+              date: new Date(t.date),
+              lots: Number(t.lots),
+              shares: Number(t.shares),
+              pricePerShare: Number(t.pricePerShare),
+              fee: Number(t.fee || 0),
+              totalAmount: Number(t.totalAmount),
+              notes: t.notes || null,
+              broker: t.broker || "Default",
+            },
+          });
+        }
+      }
+
+      if (Array.isArray(data.dividends)) {
+        for (const d of data.dividends) {
+          await tx.dividend.create({
+            data: {
+              id: d.id,
+              stockTicker: d.stockTicker,
+              paymentDate: new Date(d.paymentDate),
+              dps: Number(d.dps),
+              totalShares: Number(d.totalShares),
+              grossAmount: Number(d.grossAmount),
+              taxRate: Number(d.taxRate ?? 0.1),
+              taxAmount: Number(d.taxAmount || 0),
+              netAmount: Number(d.netAmount),
+              notes: d.notes || null,
+            },
+          });
+        }
+      }
+
+      if (Array.isArray(data.cashTransactions)) {
+        for (const c of data.cashTransactions) {
+          await tx.cashTransaction.create({
+            data: {
+              id: c.id,
+              date: new Date(c.date),
+              type: c.type,
+              amount: Number(c.amount),
+              notes: c.notes || null,
+              broker: c.broker || "Default",
+            },
+          });
+        }
+      }
+
+      if (Array.isArray(data.savingsGoals)) {
+        for (const g of data.savingsGoals) {
+          await tx.savingsGoal.create({
+            data: {
+              id: g.id,
+              yearMonth: g.yearMonth,
+              targetAmount: Number(g.targetAmount),
+              notes: g.notes || null,
+            },
+          });
+        }
+      }
+
+      if (Array.isArray(data.settings)) {
+        for (const st of data.settings) {
+          await tx.setting.upsert({
+            where: { key: st.key },
+            update: { value: String(st.value) },
+            create: { key: st.key, value: String(st.value) },
+          });
+        }
+      }
+    });
+
+    safeRevalidate();
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error importing database JSON:", error);
+    return { success: false, error: error.message || "Gagal memulihkan data backup." };
   }
 }
 

@@ -11,6 +11,7 @@ interface NavbarProps {
   onOpenCalcModal: () => void;
   onOpenTelegramModal: () => void;
   onOpenAnalysisModal: () => void;
+  onOpenDatabaseModal: () => void;
   hasData: boolean;
 }
 
@@ -21,27 +22,14 @@ export function Navbar({
   onOpenCalcModal,
   onOpenTelegramModal,
   onOpenAnalysisModal,
-  hasData,
+  onOpenDatabaseModal,
 }: NavbarProps) {
   const [isPendingRefresh, startTransitionRefresh] = useTransition();
-  const [isPendingReset, startTransitionReset] = useTransition();
 
   const handleRefresh = () => {
     startTransitionRefresh(async () => {
       await refreshAllStockPricesAction();
     });
-  };
-
-  const handleResetPortfolio = () => {
-    if (
-      confirm(
-        "Apakah Anda yakin ingin mengosongkan seluruh riwayat transaksi saham dan mutasi kas? (Koneksi bot Telegram tetap aman dipertahankan)."
-      )
-    ) {
-      startTransitionReset(async () => {
-        await resetPortfolioDataAction();
-      });
-    }
   };
 
   return (
@@ -62,17 +50,14 @@ export function Navbar({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          {hasData && (
-            <button
-              onClick={handleResetPortfolio}
-              disabled={isPendingReset}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-2 rounded-lg bg-slate-800/60 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-500/20 transition-colors"
-              title="Kosongkan data portofolio"
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">{isPendingReset ? "Mereset..." : "Kosongkan Data"}</span>
-            </button>
-          )}
+          <button
+            onClick={onOpenDatabaseModal}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700 transition-colors"
+            title="Manajemen Database SQLite (Status, Backup, Restore, Reset)"
+          >
+            <Database className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden lg:inline">SQLite DB</span>
+          </button>
 
           <button
             onClick={handleRefresh}
