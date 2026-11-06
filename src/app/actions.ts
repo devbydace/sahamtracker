@@ -56,11 +56,11 @@ export async function getDashboardData() {
         recentDividends,
       },
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching dashboard data:", error);
     return {
       success: false,
-      error: "Gagal memuat data portofolio.",
+      error: error?.message || "Gagal memuat data portofolio.",
     };
   }
 }

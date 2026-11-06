@@ -11,11 +11,16 @@ async function DashboardLoader() {
   if (!result.success || !result.data) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
-        <div className="max-w-md text-center p-6 rounded-2xl bg-slate-900 border border-slate-800">
+        <div className="max-w-lg w-full text-center p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl">
           <h2 className="text-lg font-bold text-rose-400">Gagal Memuat Data</h2>
           <p className="text-xs text-slate-400 mt-2">
-            Terjadi kesalahan saat membaca database portofolio. Silakan periksa database.
+            Terjadi kesalahan saat membaca database portofolio.
           </p>
+          {result.error && (
+            <div className="mt-4 p-3 rounded-xl bg-slate-950 border border-rose-500/20 text-[11px] font-mono text-rose-300 text-left break-all whitespace-pre-wrap leading-relaxed">
+              {result.error}
+            </div>
+          )}
         </div>
       </div>
     );
